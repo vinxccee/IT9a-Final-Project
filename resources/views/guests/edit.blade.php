@@ -1,0 +1,55 @@
+@extends('layouts.app')
+@section('title', 'Edit Guest')
+@section('content')
+
+<div class="page-header">
+    <div><h1>Edit Guest</h1><p>{{ $guest->full_name }}</p></div>
+    <a href="{{ route('guests.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="card" style="max-width:700px;">
+    <form method="POST" action="{{ route('guests.update',$guest) }}">
+        @csrf @method('PUT')
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" name="first_name" class="form-control" value="{{ old('first_name',$guest->first_name) }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="last_name" class="form-control" value="{{ old('last_name',$guest->last_name) }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="email" class="form-control" value="{{ old('email',$guest->email) }}" required>
+                @error('email')<div class="form-error">{{ $message }}</div>@enderror
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="text" name="phone" class="form-control" value="{{ old('phone',$guest->phone) }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ID Type</label>
+                <select name="id_type" class="form-control">
+                    <option value="">Select ID type</option>
+                    @foreach(["Passport","Driver's License","SSS ID","PhilHealth ID","Voter's ID","National ID"] as $id)
+                    <option value="{{ $id }}" {{ (old('id_type',$guest->id_type)==$id)?'selected':'' }}>{{ $id }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ID Number</label>
+                <input type="text" name="id_number" class="form-control" value="{{ old('id_number',$guest->id_number) }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Address</label>
+            <textarea name="address" class="form-control">{{ old('address',$guest->address) }}</textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button type="submit" class="btn btn-gold"><i class="fas fa-save"></i> Update Guest</button>
+            <a href="{{ route('guests.index') }}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+@endsection
