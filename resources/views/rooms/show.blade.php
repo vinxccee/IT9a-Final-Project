@@ -1,49 +1,85 @@
 @extends('layouts.app')
 @section('title', 'Room Details')
 @section('content')
-
 <div class="page-header">
-    <div><h1>Room {{ $room->room_number }}</h1><p>{{ ucfirst($room->type) }} Room Details</p></div>
-    <div style="display:flex;gap:8px;">
-        @if(auth()->user()->isAdmin() || auth()->user()->isStaff())
-        <a href="{{ route('rooms.edit',$room) }}" class="btn btn-warning"><i class="fas fa-pen"></i> Edit</a>
+    <div>
+        <h1>Room {{ $room->room_number }}</h1>
+        <p>{{ $room->typeLabel }} · {{ $room->capacity }} guest(s) · P{{ number_format($room->price_per_night, 2) }}/night</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        @if(auth()->user()->hasRole(['admin', 'receptionist']))
+            <a href="{{ route('rooms.edit', $room) }}" class="btn btn-primary">Edit Room</a>
+        @elseif(auth()->user()->isGuest())
+            <a href="{{ route('bookings.create', ['room_id' => $room->id]) }}" class="btn btn-primary"><i class="fas fa-calendar-check"></i> Reserve This Room</a>
         @endif
-        <a href="{{ route('rooms.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+        <a href="{{ route('rooms.index') }}" class="btn btn-secondary">Back</a>
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;flex-wrap:wrap;">
+<div class="grid-2">
     <div class="card">
-        <div class="card-header"><div class="card-title">Room Info</div><span class="badge badge-{{ $room->status_color }}">{{ $room->status }}</span></div>
-        <dl class="detail-list">
-            <dt>Room Number</dt><dd>{{ $room->room_number }}</dd>
-            <dt>Type</dt><dd>{{ ucfirst($room->type) }}</dd>
-            <dt>Price Per Night</dt><dd style="color:#C9A84C;font-weight:600;">₱{{ number_format($room->price_per_night,2) }}</dd>
-            <dt>Capacity</dt><dd>{{ $room->capacity }} persons</dd>
-            <dt>Description</dt><dd>{{ $room->description ?: '—' }}</dd>
-        </dl>
-    </div>
-    <div class="card">
-        <div class="card-header"><div class="card-title">Booking History</div></div>
-        @if($room->bookings->count())
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Guest</th><th>Check In</th><th>Check Out</th><th>Amount</th><th>Status</th></tr></thead>
-                <tbody>
-                @foreach($room->bookings as $b)
-                <tr>
-                    <td>{{ $b->guest->full_name }}</td>
-                    <td>{{ $b->check_in->format('M d, Y') }}</td>
-                    <td>{{ $b->check_out->format('M d, Y') }}</td>
-                    <td>₱{{ number_format($b->total_amount,2) }}</td>
-                    <td><span class="badge badge-{{ $b->status_color }}">{{ $b->status }}</span></td>
-                </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
+        @if($room->image_url)
+            <img src="{{ $room->image_url }}" alt="Room {{ $room->room_number }} photo" class="reservation-room-photo">
         @else
-        <div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>No bookings for this room.</p></div>
+            <div class="reservation-room-photo reservation-room-placeholder">
+                <i class="fas fa-bed"></i>
+            </div>
+        @endif
+        <div class="card-title">Overview</div>
+        <p class="muted" style="margin:10px 0 18px;">{{ $room->description ?: 'No additional room notes yet.' }}</p>
+        <div style="display:grid; gap:10px;">
+            <div><strong>Status:</strong> <span class="badge badge-{{ $room->status_color }}">{{ str_replace('_', ' ', $room->status) }}</span></div>
+            <div><strong>Type:</strong> {{ $room->typeLabel }}</div>
+            <div><strong>Base Rate:</strong> P{{ number_format($room->price_per_night, 2) }}</div>
+            <div><strong>Capacity:</strong> {{ $room->capacity }} guest(s)</div>
+        </div>
+    </div>
+
+    <div class="card">
+        @if(auth()->user()->isGuest())
+            <div class="card-title">Room Amenities</div>
+            <p class="muted" style="margin:10px 0 18px;">Included with this {{ $room->typeLabel }} stay.</p>
+            @if(! empty($room->roomType?->amenities))
+                <ul class="amenities-list">
+                    @foreach($room->roomType->amenities as $amenity)
+                        <li>{{ $amenity }}</li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="empty-state">
+                    <i class="fas fa-concierge-bell"></i>
+                    <div>Amenities will be updated soon.</div>
+                </div>
+            @endif
+        @else
+            <div class="card-title">Recent Reservations</div>
+            @if($room->bookings->isNotEmpty())
+            <div class="table-wrap" style="margin-top:16px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Guest</th>
+                            <th>Stay</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($room->bookings->take(6) as $booking)
+                            <tr>
+                                <td>{{ $booking->guest->full_name }}</td>
+                                <td>{{ $booking->check_in->format('M d, Y') }} to {{ $booking->check_out->format('M d, Y') }}</td>
+                                <td><span class="badge badge-{{ $booking->status_color }}">{{ str_replace('_', ' ', $booking->status) }}</span></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <div class="empty-state">
+                <i class="fas fa-calendar"></i>
+                <div>No reservation history for this room yet.</div>
+            </div>
+            @endif
         @endif
     </div>
 </div>

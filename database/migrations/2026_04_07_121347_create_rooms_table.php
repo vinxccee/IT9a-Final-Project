@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->decimal('price_per_night', 10, 2);
             $table->integer('capacity');
-            $table->enum('status', ['available', 'occupied', 'maintenance'])->default('available');
+            $table->enum('status', ['available', 'occupied', 'under_maintenance'])->default('available');
             $table->string('image')->nullable();
             $table->timestamps();
         });

@@ -1,12 +1,16 @@
 @extends('layouts.guest')
 @section('title', 'Login')
 @section('content')
-<div class="auth-card">
-    <h2>Welcome back</h2>
+<span class="panel-eyebrow"><i class="fas fa-right-to-bracket"></i> Sign In</span>
+<h2 class="panel-title">Welcome back</h2>
+<p class="panel-copy">Access the Grand Azure Hotel platform using your assigned account credentials.</p>
 
+<div class="auth-card">
     @if ($errors->any())
-        <div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:#F85149;padding:10px 14px;border-radius:8px;font-size:.82rem;margin-bottom:1rem;">
-            @foreach ($errors->all() as $error) <div>{{ $error }}</div> @endforeach
+        <div class="alert alert-danger">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
         </div>
     @endif
 
@@ -20,24 +24,32 @@
             <label class="form-label">Password</label>
             <input type="password" name="password" class="form-control" required>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;font-size:.8rem;">
-            <label style="display:flex;align-items:center;gap:6px;color:#8B949E;cursor:pointer;">
-                <input type="checkbox" name="remember"> Remember me
+        <div class="form-row">
+            <label class="checkbox-row">
+                <input type="checkbox" name="remember">
+                <span>Remember me</span>
             </label>
             @if (Route::has('password.request'))
-                <a href="{{ route('password.request') }}" style="color:#C9A84C;text-decoration:none;">Forgot password?</a>
+                <a href="{{ route('password.request') }}" class="form-link">Forgot password?</a>
             @endif
         </div>
-        <button type="submit" class="btn-gold">Sign In</button>
+        <button type="submit" class="btn-primary">
+            <i class="fas fa-arrow-right-to-bracket"></i> Sign In
+        </button>
     </form>
+
     <div class="auth-link">
-        Don't have an account? <a href="{{ route('register') }}">Register here</a>
+        Need an account? <a href="{{ route('register') }}">Create one here</a>
     </div>
-    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #30363D;font-size:.75rem;color:#8B949E;">
-        <strong style="color:#C9A84C;">Demo Accounts:</strong><br>
-        Admin: admin@hotel.com / password<br>
-        Staff: staff@hotel.com / password<br>
-        Guest: guest@hotel.com / password
+
+    <div class="demo-card">
+        <strong><i class="fas fa-id-card"></i> Demo Accounts</strong>
+        <div class="demo-grid">
+            <div class="demo-item"><span>Admin</span><span>admin@hotel.com / password</span></div>
+            <div class="demo-item"><span>Receptionist</span><span>reception@hotel.com / password</span></div>
+            <div class="demo-item"><span>Housekeeping</span><span>housekeeping@hotel.com / password</span></div>
+            <div class="demo-item"><span>Guest</span><span>guest@hotel.com / password</span></div>
+        </div>
     </div>
 </div>
 @endsection

@@ -18,4 +18,8 @@ class Staff extends Model {
     public function user() {
         return $this->belongsTo(User::class);
     }
+
+    public function housekeepingTasks() {
+        return $this->hasMany(HousekeepingTask::class);
+    }
 }

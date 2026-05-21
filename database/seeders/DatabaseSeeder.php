@@ -2,77 +2,216 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Room;
 use App\Models\Guest;
+use App\Models\Room;
+use App\Models\RoomType;
+use App\Models\Service;
 use App\Models\Staff;
+use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-class DatabaseSeeder extends Seeder {
-    public function run(): void {
-
-        // Admin account
-        $admin = User::create([
-            'name'     => 'Hotel Admin',
-            'email'    => 'admin@hotel.com',
-            'password' => Hash::make('password'),
-            'role'     => 'admin',
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $roles = collect([
+            ['name' => 'guest', 'description' => 'Registers an account, browses available rooms, makes/cancels reservations, requests services, makes payments, and leaves feedback.'],
+            ['name' => 'receptionist', 'description' => 'Manages check-ins/check-outs, guest reservations, room status, billing, payments, housekeeping tasks, and walk-in bookings.'],
+            ['name' => 'admin', 'description' => 'Full system access — manages users, rooms, pricing, employees, reports, analytics, system settings, and overrides.'],
+        ])->mapWithKeys(fn ($role) => [
+            $role['name'] => UserRole::updateOrCreate(['name' => $role['name']], $role),
         ]);
 
-        // Staff account
-        $staffUser = User::create([
-            'name'     => 'Jane Staff',
-            'email'    => 'staff@hotel.com',
-            'password' => Hash::make('password'),
-            'role'     => 'staff',
+        $roomTypes = collect([
+            [
+                'name' => 'Standard',
+                'description' => 'Cozy room for short stays and solo travelers.',
+                'base_price' => 1500,
+                'capacity' => 2,
+                'amenities' => ['High-speed Wi-Fi', 'Smart TV', 'Writing desk', 'Hot and cold shower', 'Daily housekeeping'],
+            ],
+            [
+                'name' => 'Deluxe',
+                'description' => 'Spacious room with premium comfort and city views.',
+                'base_price' => 3200,
+                'capacity' => 3,
+                'amenities' => ['High-speed Wi-Fi', 'Smart TV', 'Mini bar', 'Private balcony', 'Coffee and tea set', 'Premium toiletries'],
+            ],
+            [
+                'name' => 'Suite',
+                'description' => 'Luxury suite with lounge area and extended stay comfort.',
+                'base_price' => 7200,
+                'capacity' => 4,
+                'amenities' => ['High-speed Wi-Fi', 'Smart TV', 'Separate lounge area', 'Bathtub', 'Kitchenette', 'Complimentary breakfast'],
+            ],
+        ])->mapWithKeys(fn ($roomType) => [
+            strtolower($roomType['name']) => RoomType::updateOrCreate(['name' => $roomType['name']], $roomType),
         ]);
 
-        // Guest account
-        User::create([
-            'name'     => 'John Guest',
-            'email'    => 'guest@hotel.com',
-            'password' => Hash::make('password'),
-            'role'     => 'guest',
-        ]);
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@hotel.com'],
+            [
+                'name' => 'Hotel Admin',
+                'password' => Hash::make('password'),
+                'user_role_id' => $roles['admin']->id,
+                'phone' => '09090000001',
+                'is_active' => true,
+            ]
+        );
 
-        // Rooms
-        $rooms = [
-            ['room_number'=>'101','type'=>'standard','description'=>'Cozy standard room with garden view.','price_per_night'=>1500,'capacity'=>2,'status'=>'available'],
-            ['room_number'=>'102','type'=>'standard','description'=>'Comfortable room with city view.','price_per_night'=>1500,'capacity'=>2,'status'=>'available'],
-            ['room_number'=>'201','type'=>'deluxe','description'=>'Spacious deluxe room with balcony.','price_per_night'=>3000,'capacity'=>3,'status'=>'available'],
-            ['room_number'=>'202','type'=>'deluxe','description'=>'Deluxe room with ocean view.','price_per_night'=>3500,'capacity'=>3,'status'=>'occupied'],
-            ['room_number'=>'301','type'=>'suite','description'=>'Luxury suite with living area.','price_per_night'=>7000,'capacity'=>4,'status'=>'available'],
-            ['room_number'=>'401','type'=>'presidential','description'=>'Top-floor presidential suite.','price_per_night'=>15000,'capacity'=>6,'status'=>'maintenance'],
-        ];
+        $receptionist1 = User::updateOrCreate(
+            ['email' => 'reception@hotel.com'],
+            [
+                'name' => 'Jane Reception',
+                'password' => Hash::make('password'),
+                'user_role_id' => $roles['receptionist']->id,
+                'phone' => '09090000002',
+                'is_active' => true,
+            ]
+        );
 
-        foreach ($rooms as $room) {
-            Room::create($room);
+        $receptionist2 = User::updateOrCreate(
+            ['email' => 'operations@hotel.com'],
+            [
+                'name' => 'Marco Operations',
+                'password' => Hash::make('password'),
+                'user_role_id' => $roles['receptionist']->id,
+                'phone' => '09090000003',
+                'is_active' => true,
+            ]
+        );
+
+        $guest = User::updateOrCreate(
+            ['email' => 'guest@hotel.com'],
+            [
+                'name' => 'John Guest',
+                'password' => Hash::make('password'),
+                'user_role_id' => $roles['guest']->id,
+                'phone' => '09090000005',
+                'is_active' => true,
+            ]
+        );
+
+        foreach ([
+            [
+                'room_number' => '101',
+                'room_type_id' => $roomTypes['standard']->id,
+                'description' => 'Cozy standard room with a warm garden view, queen bed, work desk, and easy access to the lobby.',
+                'status' => 'available',
+                'image' => 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80',
+            ],
+            [
+                'room_number' => '102',
+                'room_type_id' => $roomTypes['standard']->id,
+                'description' => 'Bright standard room with city-facing windows, compact workspace, and comfortable overnight essentials.',
+                'status' => 'available',
+                'image' => 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+            ],
+            [
+                'room_number' => '201',
+                'room_type_id' => $roomTypes['deluxe']->id,
+                'description' => 'Spacious deluxe room with a private balcony, soft seating corner, and minibar for relaxed stays.',
+                'status' => 'available',
+                'image' => 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+            ],
+            [
+                'room_number' => '202',
+                'room_type_id' => $roomTypes['deluxe']->id,
+                'description' => 'Deluxe ocean-view room with sunrise-facing balcony, premium linens, and generous floor space.',
+                'status' => 'available',
+                'image' => 'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80',
+            ],
+            [
+                'room_number' => '301',
+                'room_type_id' => $roomTypes['suite']->id,
+                'description' => 'Luxury suite with a separate lounge area, deep bathtub, kitchenette, and breakfast service.',
+                'status' => 'available',
+                'image' => 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80',
+            ],
+            [
+                'room_number' => '302',
+                'room_type_id' => $roomTypes['suite']->id,
+                'description' => 'Premium family suite with expanded living space, dining nook, bathtub, and a quiet upper-floor view.',
+                'status' => 'available',
+                'image' => 'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?auto=format&fit=crop&w=1200&q=80',
+            ],
+        ] as $room) {
+            Room::updateOrCreate(['room_number' => $room['room_number']], $room);
         }
 
-        // Guests
-        $guest1 = Guest::create([
-            'first_name'=>'Maria','last_name'=>'Santos',
-            'email'=>'maria.santos@email.com','phone'=>'09171234567',
-            'address'=>'Quezon City, Metro Manila',
-            'id_type'=>'Passport','id_number'=>'P1234567',
-        ]);
+        Guest::updateOrCreate(
+            ['email' => 'maria.santos@email.com'],
+            [
+                'first_name' => 'Maria',
+                'last_name' => 'Santos',
+                'phone' => '09171234567',
+                'address' => 'Quezon City, Metro Manila',
+                'id_type' => 'Passport',
+                'id_number' => 'P1234567',
+            ]
+        );
 
-        $guest2 = Guest::create([
-            'first_name'=>'Carlos','last_name'=>'Reyes',
-            'email'=>'carlos.reyes@email.com','phone'=>'09281234567',
-            'address'=>'Cebu City, Cebu',
-            'id_type'=>'Driver\'s License','id_number'=>'N01-23-456789',
-        ]);
+        Guest::updateOrCreate(
+            ['email' => 'carlos.reyes@email.com'],
+            [
+                'first_name' => 'Carlos',
+                'last_name' => 'Reyes',
+                'phone' => '09281234567',
+                'address' => 'Cebu City, Cebu',
+                'id_type' => 'Driver\'s License',
+                'id_number' => 'N01-23-456789',
+            ]
+        );
 
-        // Staff
-        Staff::create([
-            'user_id'    => $staffUser->id,
-            'position'   => 'Front Desk Officer',
-            'department' => 'Reception',
-            'phone'      => '09101234567',
-            'hired_at'   => '2023-01-15',
-            'status'     => 'active',
-        ]);
+        Guest::updateOrCreate(
+            ['email' => $guest->email],
+            [
+                'first_name' => 'John',
+                'last_name' => 'Guest',
+                'phone' => $guest->phone,
+                'address' => 'Pasig City, Metro Manila',
+                'id_type' => 'Passport',
+                'id_number' => 'P7654321',
+            ]
+        );
+
+        foreach ([
+            [
+                'user_id' => $admin->id,
+                'position' => 'General Manager',
+                'department' => 'Administration',
+                'phone' => '09101234560',
+                'hired_at' => '2022-01-01',
+                'status' => 'active',
+            ],
+            [
+                'user_id' => $receptionist1->id,
+                'position' => 'Front Desk Officer',
+                'department' => 'Reception',
+                'phone' => '09101234567',
+                'hired_at' => '2023-01-15',
+                'status' => 'active',
+            ],
+            [
+                'user_id' => $receptionist2->id,
+                'position' => 'Operations Officer',
+                'department' => 'Operations',
+                'phone' => '09101234568',
+                'hired_at' => '2023-06-12',
+                'status' => 'active',
+            ],
+        ] as $staffMember) {
+            Staff::updateOrCreate(['user_id' => $staffMember['user_id']], $staffMember);
+        }
+
+        foreach ([
+            ['name' => 'Breakfast Buffet', 'description' => 'Daily breakfast service', 'price' => 450],
+            ['name' => 'Airport Transfer', 'description' => 'One-way airport shuttle', 'price' => 900],
+            ['name' => 'Laundry Service', 'description' => 'Same-day laundry package', 'price' => 350],
+        ] as $service) {
+            Service::updateOrCreate(['name' => $service['name']], $service);
+        }
     }
 }

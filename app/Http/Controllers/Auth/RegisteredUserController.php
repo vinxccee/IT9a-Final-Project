@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Guest;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,14 +35,34 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'phone' => ['required', 'string', 'max:20'],
+            'id_type' => ['nullable', 'string'],
+            'id_number' => ['nullable', 'string'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        $guestRole = UserRole::where('name', 'guest')->first();
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'user_role_id' => $guestRole?->id,
         ]);
+
+        $nameParts = preg_split('/\s+/', trim($request->name), 2);
+
+        Guest::firstOrCreate(
+            ['email' => $request->email],
+            [
+                'first_name' => $nameParts[0] ?? $request->name,
+                'last_name' => $nameParts[1] ?? 'Guest',
+                'phone' => $request->phone,
+                'id_type' => $request->id_type,
+                'id_number' => $request->id_number,
+            ]
+        );
 
         event(new Registered($user));
 

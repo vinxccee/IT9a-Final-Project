@@ -4,17 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Staff;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller {
 
     public function index() {
-        $staff = Staff::with('user')->latest()->paginate(10);
+        $staff = Staff::with('user.userRole')->latest()->paginate(10);
         return view('staff.index', compact('staff'));
     }
 
     public function create() {
-        $users = User::whereDoesntHave('staff')->where('role', '!=', 'guest')->get();
+        $guestRoleId = UserRole::where('name', 'guest')->value('id');
+
+        $users = User::with('userRole')
+            ->whereDoesntHave('staff')
+            ->when($guestRoleId, fn ($query) => $query->where('user_role_id', '!=', $guestRoleId))
+            ->get();
+
         return view('staff.create', compact('users'));
     }
 
@@ -33,12 +40,17 @@ class StaffController extends Controller {
     }
 
     public function show(Staff $staff) {
-        $staff->load('user');
+        $staff->load('user.userRole');
         return view('staff.show', compact('staff'));
     }
 
     public function edit(Staff $staff) {
-        $users = User::where('role', '!=', 'guest')->get();
+        $guestRoleId = UserRole::where('name', 'guest')->value('id');
+
+        $users = User::with('userRole')
+            ->when($guestRoleId, fn ($query) => $query->where('user_role_id', '!=', $guestRoleId))
+            ->get();
+
         return view('staff.edit', compact('staff', 'users'));
     }
 

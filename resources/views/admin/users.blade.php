@@ -1,70 +1,78 @@
 @extends('layouts.app')
 @section('title', 'User Management')
 @section('content')
-
 <div class="page-header">
-    <div><h1>User Management</h1><p>Admin Panel — Manage system users and roles</p></div>
-</div>
-
-<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px 16px;margin-bottom:1.5rem;font-size:.875rem;display:flex;align-items:center;gap:8px;">
-    <i class="fas fa-shield-halved" style="color:#C9A84C;"></i>
-    <span><strong style="color:#C9A84C;">Admin Only:</strong> This panel is restricted to administrators. You can manage roles and delete user accounts here.</span>
+    <div>
+        <h1>User Management</h1>
+        <p>Assign operational roles and deactivate accounts that should no longer access the system.</p>
+    </div>
 </div>
 
 <div class="card">
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Registered</th><th>Change Role</th><th>Actions</th></tr>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Change Role</th>
+                    <th>Controls</th>
+                </tr>
             </thead>
             <tbody>
-            @foreach($users as $u)
-            <tr>
-                <td style="color:#8B949E;">{{ $u->id }}</td>
-                <td>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <div style="width:30px;height:30px;background:linear-gradient(135deg,#C9A84C,#E8C97A);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0D1117;">
-                            {{ strtoupper(substr($u->name,0,2)) }}
-                        </div>
-                        {{ $u->name }}
-                        @if($u->id === auth()->id())
-                        <span class="badge badge-warning" style="font-size:.65rem;">You</span>
-                        @endif
-                    </div>
-                </td>
-                <td>{{ $u->email }}</td>
-                <td>
-                    <span class="role-{{ $u->role }}">
-                        @if($u->role === 'admin') <i class="fas fa-shield-halved"></i> @endif
-                        {{ ucfirst($u->role) }}
-                    </span>
-                </td>
-                <td>{{ $u->created_at->format('M d, Y') }}</td>
-                <td>
-                    @if($u->id !== auth()->id())
-                    <form method="POST" action="{{ route('admin.users.role',$u) }}" style="display:flex;gap:6px;align-items:center;">
-                        @csrf @method('PATCH')
-                        <select name="role" class="form-control" style="width:auto;padding:5px 10px;font-size:.8rem;">
-                            @foreach(['admin','staff','guest'] as $r)
-                            <option value="{{ $r }}" {{ $u->role===$r?'selected':'' }}>{{ ucfirst($r) }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="btn btn-gold btn-sm">Set</button>
-                    </form>
-                    @else
-                    <span style="color:#8B949E;font-size:.8rem;">Cannot change own role</span>
-                    @endif
-                </td>
-                <td>
-                    @if($u->id !== auth()->id())
-                    <form method="POST" action="{{ route('admin.users.destroy',$u) }}" onsubmit="return confirm('Delete user {{ $u->name }}?')">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
-                    </form>
-                    @endif
-                </td>
-            </tr>
-            @endforeach
+                @foreach($users as $user)
+                    <tr>
+                        <td>
+                            <strong>{{ $user->name }}</strong>
+                            @if($user->id === auth()->id())
+                                <span class="badge badge-warning">You</span>
+                            @endif
+                        </td>
+                        <td>{{ $user->email }}</td>
+                        <td>{{ $user->roleLabel() }}</td>
+                        <td>
+                            <span class="badge badge-{{ $user->is_active ? 'success' : 'danger' }}">
+                                {{ $user->is_active ? 'Active' : 'Inactive' }}
+                            </span>
+                        </td>
+                        <td>
+                            @if($user->id !== auth()->id())
+                                <form method="POST" action="{{ route('admin.users.role', $user) }}" style="display:flex; gap:8px;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="user_role_id" class="form-control" style="min-width:180px;">
+                                        @foreach($roles as $role)
+                                            <option value="{{ $role->id }}" {{ $user->user_role_id === $role->id ? 'selected' : '' }}>
+                                                {{ str($role->name)->replace('_', ' ')->title() }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                                </form>
+                            @else
+                                <span class="muted">Own role cannot be changed here.</span>
+                            @endif
+                        </td>
+                        <td style="display:flex; gap:8px;">
+                            @if($user->id !== auth()->id())
+                                <form method="POST" action="{{ route('admin.users.active', $user) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="btn btn-secondary btn-sm">
+                                        {{ $user->is_active ? 'Deactivate' : 'Activate' }}
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user account?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
             </tbody>
         </table>
     </div>

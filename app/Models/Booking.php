@@ -17,6 +17,7 @@ class Booking extends Model {
     protected $casts = [
         'check_in'  => 'date',
         'check_out' => 'date',
+        'total_amount' => 'decimal:2',
     ];
 
     public function room() {
@@ -29,6 +30,18 @@ class Booking extends Model {
 
     public function user() {
         return $this->belongsTo(User::class);
+    }
+
+    public function checkin() {
+        return $this->hasOne(CheckIn::class);
+    }
+
+    public function checkout() {
+        return $this->hasOne(CheckOut::class);
+    }
+
+    public function invoice() {
+        return $this->hasOne(Invoice::class);
     }
 
     public function getNightsAttribute(): int {
@@ -44,5 +57,9 @@ class Booking extends Model {
             'cancelled'   => 'danger',
             default       => 'secondary',
         };
+    }
+
+    public function scopeActive($query) {
+        return $query->whereIn('status', ['pending', 'confirmed', 'checked_in']);
     }
 }
