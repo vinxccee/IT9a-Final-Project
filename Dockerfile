@@ -64,11 +64,11 @@ storage/framework/views bootstrap/cache public/uploads \
 && chown -R www-data:www-data storage bootstrap/cache public/uploads \
 && chmod -R 775 storage bootstrap/cache public/uploads
 
-# (Optional) Run migrations
-RUN php artisan migrate --force || true
+RUN chmod +x docker-entrypoint.sh
 
 # Expose port
 EXPOSE 10000
 
 # Start Apache
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
