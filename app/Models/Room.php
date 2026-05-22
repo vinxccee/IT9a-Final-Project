@@ -10,6 +10,13 @@ use Illuminate\Support\Str;
 class Room extends Model {
     use HasFactory;
 
+    private const FALLBACK_IMAGES = [
+        'standard' => 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80',
+        'deluxe' => 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+        'suite' => 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80',
+        'default' => 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+    ];
+
     protected $fillable = [
         'room_number', 'room_type_id', 'description', 'status', 'image'
     ];
@@ -54,15 +61,25 @@ class Room extends Model {
         };
     }
 
-    public function getImageUrlAttribute(): ?string {
+    public function getImageUrlAttribute(): string {
         if (! $this->image) {
-            return null;
+            return $this->fallbackImageUrl();
         }
 
         if (Str::startsWith($this->image, ['http://', 'https://', 'data:'])) {
             return $this->image;
         }
 
-        return Storage::disk('public')->url($this->image);
+        if (Storage::disk('public')->exists($this->image)) {
+            return Storage::disk('public')->url($this->image);
+        }
+
+        return $this->fallbackImageUrl();
+    }
+
+    private function fallbackImageUrl(): string {
+        $roomType = Str::lower((string) $this->roomType?->name);
+
+        return self::FALLBACK_IMAGES[$roomType] ?? self::FALLBACK_IMAGES['default'];
     }
 }
